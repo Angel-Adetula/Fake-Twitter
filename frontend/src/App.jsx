@@ -1,13 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
-
 function App() {
-  const [posts, setPosts] = useState([{
-    content: 'Lorem, ipsum dolor sit amet consectetur adipisicing elit. Explicabo iste quia cum architecto autem porro modi consequuntur provident, quidem adipisci nobis eius deserunt aspernatur inventore!'
-  }],
-    [{
-      content: 'Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia'
-    }]);
+  
+  const [posts, setPosts] = useState([]);
+  const [singlePost, setPost] = useState("");
+
+  const handleSubmit = (event) =>{
+    event.preventDefault();
+    fetch("http://localhost:3001/posts",
+    {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        text: singlePost,
+      })
+    }).then(res=> console.log(res.status))
+    setPost("")
+  }
+  const handleDelete = (postID) => {
+    fetch("http://localhost:3001/posts",
+    {
+      method: 'DELETE',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        _id: postID,
+       })
+    }).then(res=> console.log(res.status))
+  }
+
+  function formatDate(timeStamp) {
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"]
+    var monthIndex = timeStamp.slice(5, 7)
+    var month  = months[parseInt(monthIndex)-1];
+    var year  =  timeStamp.slice(0,4)
+    var date = timeStamp.slice(5,10)
+    date = date.replace(/-/gi, ", ")
+    date = date.replace(monthIndex, month)
+    date += ", " + year;
+
+
+
+    return date;
+  }
+
+  useEffect(() => {
+    fetch("http://localhost:3001/posts")
+    .then(res => res.json())
+    .then(posts => setPosts(posts))
+  }, [posts])
   return (
     <div className='react-app-component text-center'>
       <div className="container">
@@ -17,26 +63,26 @@ function App() {
               <div className="card-body">
                 <div className="mb-3">
                   <label className="form-label">Enter your post</label>
-                  <textarea className="form-control" id="post-content" rows="3"></textarea>
+                  <textarea className="form-control" id="post-content" rows="3" value={singlePost} onChange={(e) => setPost(e.target.value)}></textarea>
                   <div className="d-grid gap-2">
-                    <button type="button" className="btn btn-primary mt-2">Post</button>
+                    <button type="button" className="btn btn-primary mt-2" onClick={handleSubmit}>Post</button>
                   </div>
                 </div>
               </div>
             </div>
-
+            {posts.map((post, index) =>(
             <div className="card text-white bg-dark my-3 text-start">
               <div className="card-body">
-                <h6 className="card-subtitle mb-2 text-muted">Oct 4, 2022 - 6:15 PM</h6>
-                <p className="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
-                <a href="#" className="card-link">Delete</a>
+                <h6 className="card-subtitle mb-2 text-muted">{formatDate(post.createdAt)}</h6>
+                <p className="card-text">{post.text}</p>
+                <a href="#" className="card-link" onClick={() => handleDelete(post._id)}>Delete</a>
               </div>
             </div>
+            ))}
           </div>
         </div>
       </div>
     </div>
   );
 }
-
 export default App;
